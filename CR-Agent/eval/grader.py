@@ -3,13 +3,19 @@ This logic is largely copied from the Hendrycks' MATH release (math_equivalence)
 - https://github.com/microsoft/ProphetNet/tree/master/CRITIC
 - https://github.com/openai/prm800k
 """
+
 import multiprocessing
+#multiprocessing 是Python标准库中的一个模块，它允许你进行多进程编程，即可以创建多个进程并行运行
 from math import isclose
+#用于比较两个浮点数是否近似相等。它允许指定一个相对误差和绝对误差，来判断两个数是否足够接近。
 from typing import Union
+#typing模块是Python的一个标准库，用于支持类型提示（type hints），使得代码更加清晰和易于理解。Union是一个特殊的类型，用于表示一个值可以是多种类型中的任意一种。
 
 from sympy import simplify, N
+#这是一个函数，用于简化数学表达式。例如，它可以将复杂的分数、代数表达式等简化为更简洁的形式。
+#N：这也是一个函数，用于将符号表达式转换为数值形式。例如，它可以将一个分数或无理数转换为浮点数。
 from sympy.parsing.sympy_parser import parse_expr
-from sympy.parsing.latex import parse_latex
+from sympy.parsing.latex import parse_latex#这两个是表达式解析的包
 
 
 def is_digit(s):
@@ -75,6 +81,7 @@ def math_equal(prediction: Union[bool, float, str],
     ## [a, b] vs. [c, d], return a==c and b==d
     if (prediction.startswith("[") and prediction.endswith("]")) and (reference.startswith("[") and reference.endswith("]")) or \
         (prediction.startswith("(") and prediction.endswith(")")) and (reference.startswith("(") and reference.endswith(")")):
+        #为什么第一个元素不用比较
         pred_parts = prediction[1:-1].split(",")
         ref_parts = reference[1:-1].split(",")
         if len(pred_parts) == len(ref_parts):
