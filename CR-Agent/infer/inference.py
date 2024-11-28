@@ -23,6 +23,7 @@ MAX_PROMPT_LENGTH_GPT35 = 15000
 import subprocess
 
 def get_git_commit_id(length=7):
+    #这个函数尝试获取当前 Git 仓库的最新提交ID，并返回其前 length 个字符。如果获取失败，比如因为当前目录不是一个 Git 仓库，它就会返回 "Unknown"。
     try:
         # Run the git command to get the latest commit ID
         commit_id = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
@@ -37,6 +38,10 @@ from tenacity import (
     stop_after_attempt,
     wait_random_exponential,
 )  # for exponential backoff
+#retry: 这个装饰器（decorator）用于重试一个函数，如果该函数在执行过程中抛出了指定的异常，那么它会按照一定的策略（例如指数退避）再次尝试执行该函数。
+#stop_after_attempt: 这个装饰器用于设置重试的最大尝试次数。如果重试次数达到这个值，即使函数仍然失败，也不会再进行重试。
+#wait_random_exponential: 这个装饰器用于设置重试之间的等待时间。它会在每次重试之间等待一个随机的时间，这个时间是指数退避的，即每次等待的时间是前一次的两倍（或指定的指数基数倍），并且会在这个基础上加上一个随机的“抖动”（jitter），以避免多个实例同时重试导致的同步问题。
+#这三个装饰器通常一起使用，以实现一个带有指数退避策略的重试机制。这种机制在处理网络请求或其他可能暂时失败的操作时非常有用，因为它可以在失败后等待适当的时间再重试，减少资源的浪费，并提高成功率。
 
 # define a retry decorator
 def retry_with_exponential_backoff(
@@ -89,7 +94,10 @@ def retry_with_exponential_backoff(
 @retry_with_exponential_backoff
 def completion_with_backoff(**kwargs):
     return openai.ChatCompletion.create(**kwargs)
-
+"""这段代码定义了一个名为 completion_with_backoff 的函数，它的作用是使用 openai.ChatCompletion.create 方法来创建一个聊天完成（chat completion）任务，并且这个函数支持带有指数退避策略的重试机制。
+具体来说，completion_with_backoff 函数接受任意数量的关键字参数（**kwargs），这些参数将被传递给 openai.ChatCompletion.create 方法。这个方法是 OpenAI 库中用于生成聊天回复的函数，它可以根据提供的提示（prompt）和模型生成文本。
+这里的 **kwargs 表示函数可以接受任意数量的命名参数，这些参数将被打包成一个字典，并传递给 openai.ChatCompletion.create 方法。这样，调用 completion_with_backoff 函数时，可以灵活地指定不同的参数，如模型名称、提示文本、温度参数（用于控制生成文本的随机性）等。
+这个函数被设计为与重试装饰器（@retry_with_exponential_backoff）一起使用，这意味着如果 openai.ChatCompletion.create 方法在执行过程中遇到特定的错误（如速率限制错误、API连接错误等），函数将会自动重试"""
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -120,11 +128,11 @@ def parse_args():
 
 def main(args):
     initial_system_prompt = "As one of the most distinguished mathematicians, logicians, programmers, and AI scientists, you possess an unparalleled mastery over Arithmetic, Combinatorics, Number Theory, Probability Theory, Algebra, Analysis, and Geometry. You are not only intelligent and rational but also prudent and cautious. You are willing to write and execute Python code. Let's approach each problem step by step, take a deep breath, do not save your words, articulating our thoughts in detail, as detailed as possible."
-    if args.prompt_type in ["cot"]:
+    if args.prompt_type in ["cot"]:#complexible 复杂详细的回答
         initial_system_prompt = "As one of the most distinguished mathematicians, logicians, programmers, and AI scientists, you possess an unparalleled mastery over Arithmetic, Combinatorics, Number Theory, Probability Theory, Algebra, Analysis, and Geometry. You are not only intelligent and rational but also prudent and cautious. Let's approach each problem step by step, take a deep breath, do not save your words, articulating our thoughts in detail, as detailed as possible."
     elif args.prompt_type in ["direct"]:
         initial_system_prompt = "As one of the most distinguished mathematicians, logicians, programmers, and AI scientists, you possess an unparalleled mastery over Arithmetic, Combinatorics, Number Theory, Probability Theory, Algebra, Analysis, and Geometry. You are not only intelligent and rational but also prudent and cautious."
-    elif args.prompt_type in ["pal"]:
+    elif args.prompt_type in ["pal"]:#（可能代表"python and logic"），则initial_system_prompt被设置为一个字符串，描述了助手的能力和谨慎态度，并特别指出助手只需要编写Python代码。
         initial_system_prompt = "As one of the most distinguished mathematicians, logicians, programmers, and AI scientists, you possess an unparalleled mastery over Arithmetic, Combinatorics, Number Theory, Probability Theory, Algebra, Analysis, and Geometry. You are not only intelligent and rational but also prudent and cautious. You just need to write python code."
     examples = load_data(args.data_name, args.split)
 
